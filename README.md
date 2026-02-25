@@ -1,105 +1,77 @@
-# Rearc Cybersecurity Detection Quest
-
-## Q. What is this quest?
-The cybersecurity quest is a fun way to assess your hands-on engineering skills. It is also a good representation of the type of work associated with this role.
-
-## Q. What skills are needed?
-* Security Data Engineering
-* Detection Engineering
-* Programming Language (Python and/or SQL)
-* Development (Working with Jupyter Notebooks, Python, and Git)
-
-## Q. Challenge Steps
-This quest consists of 3 main parts. Putting all 3 of these parts together will mimic our detection development and engineering workflow. If you get stuck see the [FAQ section](#faq).
-
-- Part 1 will showcase your general data skills, this section consists of:
-  - Setting up a local spark environment (this part is completed for you but may require environment setup beforehand)
-  - Loading a JSON line file into an appropriate format
-  - Parsing the JSON data out for use in following analytic steps.
-
-- Part 2 will showcase your analytic skills by applying the threat hypothesis. The expectations here are:
-  - Develop an actionable analytic query using preferably either PySpark or SQL
-  - Document your design process in either notebook context or code comments
-
-- Part 3 will showcase your knowledge of additional cybersecurity data subjects including:
-  - Alert Packaging
-  - Data Normalization Frameworks
-  - Threat Intelligence Enrichment
+# Rearc Cyber Quest - Threat Detection Engineering Assessment
+**Solved By:** Dhwanit Samir Pandya
 
 
-### Hypothesis - IMPORTANT
+## Overview
 
- - Adversaries may send spearphishing emails with a malicious attachment in an attempt to gain access to victim systems. 
- - A threat actor can leverage Microsoft Office applications against users on Windows endpoints through phishing to make potentially malicious web calls. 
- - Windows Endpoints forwarding DNS activity via sysmon logs to a data orchestration platform like Cribl would be utilized to identify this activity.
+This assessment analyzes 28,017 Sysmon events forwarded via Cribl to detect 
+macro-based phishing activity. The core hypothesis is that Microsoft Office 
+applications making unprompted DNS queries is a strong indicator of a malicious macro beaconing to a Command and Control server.
 
-### Part 1: Load the Sample Dataset
+---
 
-***THIS STEP IS COMPLETED FOR YOU.***
-<br />The template Jupyter notebook contains the code for the following actions:
+## Process
 
-1. Load the JSON line file from the `data/` directory into a Spark dataframe.
-2. Create a new dataframe that parses out any necessary fields from the `_raw` column to be used in part 2.
-3. Create a view for use with Spark SQL queries
+### Part 1 - Data Loading and Parsing
+Loaded raw Sysmon events into a Bronze layer and parsed them into a structured Silver layer. I used `get_json_object()` instead of `from_json()` to handle mixed event types cleanly, the dataset contains EventCodes 1, 3, 10, 22, and 23, each with different fields in the nested `_raw` JSON.
 
-### Part 2: Detection Engineering
+### Part 2 - Detection Engineering
+Built a detection query targeting EventCode 22 (DNS Query) events where the initiating process was a Microsoft Office application. The query returned 8 results : 7 legitimate Microsoft telemetry domains and 1 suspicious domain (www.mediafire.com).
 
-1. Preferably using either PySpark or SQL, create a query or queries that will prove the detection hypothesis.
-2. Output the result of this query in the notebook with a new dataframe
-    - Select columns based on what is applicable to an analyst during triage
+### Part 3 - Normalization, Alerting and Enrichment
+Normalized detection results to OSSEM standard field names, which is purpose built for Windows Sysmon data. Packaged the suspicious finding into a high-fidelity alert with MITRE ATT&CK mappings (T1566.001 and T1071.004) and a deterministic SHA256 alert ID to prevent duplicates across repeated detection runs.
 
-### Part 3: Additional Steps
+Enriched the alert using 3 threat intelligence sources:
+- **WHOIS** - domain registration context
+- **URLhaus** - confirmed 678 malicious URLs on mediafire.com since 2019
+- **VirusTotal** - domain reputation and vendor verdicts
 
-#### Data Normalization
- - Using any relevant cybersecurity data model framework, create a "normalized" view of your original parsed/result dataframe
+### Extra Part - Incident Investigation
+Went beyond the detection to investigate the full attack chain using EventCode 3 (Network Connection), EventCode 11 (File Create), and EventCode 23 (File Delete) logs:
+- Confirmed winword.exe made 3 outbound connections to mediafire.com (104.16.54.48)
+- Discovered the malicious document was named `asyncrat.doc` - associated with the AsyncRAT Remote Access Trojan
+- Found 113 file deletions consistent with cleanup behavior seen in malware families.
 
-#### Write the result to a fictitious `alert` table
- - Package the result of the detection as an alert row in a new dataframe that would theoretically be used by an analyst during triage
-    - Think about what an analyst would need, what metadata would be useful at a high level, how this might be presented on a dashboard
+**Final verdict: High Confidence Potential Compromise**
 
+---
 
-#### Threat Intel Enrichment on Domain in Query
-  - Given that the source data includes domain names, enrich the detection or alert with information from any threat intelligence source
+## Key Design Decisions
 
-## FAQ
+- **get_json_object over from_json** - handles mixed event types without requiring a fixed schema across all event codes
+- **OSSEM over ECS** - purpose built for Windows Sysmon, aligns with the Ultimate Windows Security Encyclopedia referenced in the assessment
+- **SHA256 alert IDs** - deterministic hashing ensures idempotency across repeated detection runs, prevents duplicate alerts
+- **Three enrichment sources** - chosen to cover domain registration, malware hosting history, and vendor reputation without overwhelming the analyst
+- **API keys in .env** - excluded from version control via .gitignore for security
+- **High-fidelity alerting** - filtered known Microsoft telemetry domains to reduce false positives and alert fatigue
 
-### Q. What do I need to do to setup this environment
-A general understanding of Python and Virtual Environments is expected. For the purposes of this challenge the only dependency outside of what is listed in the `requirements.txt` file is Java 17 or Later
+---
 
-### Q. Do I have to complete every step?
-Complete the steps that you feel comfortable with.
+## Tech Stack
 
-### Q. What do I have to submit?
-Submission should include a copy of the repo with a Jupyter notebook populated with the results of your code as well as a README file that includes a quick explanation of your process.
+- Python 3.14.2
+- Apache Spark / PySpark 3.5.8
+- Java 17 LTS
+- Jupyter Notebook
+- URLhaus API (abuse.ch)
+- VirusTotal API
+- python-whois
 
-### Q. Can I share this quest with others?
-No.
+---
 
-### Q. What can I do if I've never worked with Jupyter Notebooks, PySpark, or SQL before?
-Demonstrate your skills as best you can, if you run into problems we recommend using online documentation and examples. Document whatever process you used to demonstrate your learning and problem solving techniques.
+## References
 
-### Q. Can I use AI to assist me?
-You ***may*** use AI as a reference tool but there will be a strong expectation to exhibit the same expertise and understanding from your submission in your interview. In addition we encourage you to be open about any usage! Please document what you used, what your prompts were, how it helped, what it got wrong, etc.
+- OSSEM Detection Model: https://ossemproject.com/dm/mitre_attack/attack_techniques_to_events.html
+- OSSEM CDM DNS Entity: https://ossemproject.com/cdm/entities/dns.html
+- OSSEM EventCode 22: https://github.com/OTRF/OSSEM-DD/blob/main/windows/sysmon/events/event-22.yml
+- MITRE ATT&CK T1566.001: https://attack.mitre.org/techniques/T1566/001/
+- MITRE ATT&CK T1071.004: https://attack.mitre.org/techniques/T1071/004/
+- VirusTotal API: https://developers.virustotal.com/reference/overview
+- URLhaus API: https://urlhaus-api.abuse.ch/
+- python-whois: https://pypi.org/project/python-whois/
 
-### Q. Hints 🤐
-<details>
-<summary>Hint 1: Loading a dataframe using PySpark</summary>
+---
 
-- Installation: We recommend using a local virtual python environment, use the following link for [setup information](https://spark.apache.org/docs/latest/api/python/getting_started/install.html#)
+## Personal Note
 
--  PySpark Initialization & Reading JSON: [See Getting Started Docs](https://spark.apache.org/docs/latest/sql-getting-started.html#running-sql-queries-programmatically)
-
-</details>
-<details>
-<summary>Hint 2: Parsing a dataframe in PySpark</summary>
-
-- For extractic JSON, [See PySpark docs](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.functions.from_json.html)
-- The [Ultimate Windows Security Encyclopedia]("https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/") is a good resources for the schema.
-
-</details>
-<details>
-<summary>Hint 3: Using SQL with a dataframe</summary>
- 
-- Running SQL Queries Programmatically: [See Getting Started Docs](https://spark.apache.org/docs/latest/sql-getting-started.html#running-sql-queries-programmatically)
-
-</details>
+This was one of the more engaging technical assessments I have worked through.The dataset felt real, the hypothesis made sense, and I found myself going deeper than the requirements just out of curiosity.Ending up with a potential AsyncRAT compromise from what started as a single suspicious DNS query was a great feeling. That progression is exactly the kind of work I want to be doing, and this assessment gave me a genuine taste of it.
