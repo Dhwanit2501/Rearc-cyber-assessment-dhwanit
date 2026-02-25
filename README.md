@@ -61,14 +61,18 @@ Went beyond the detection to investigate the full attack chain using EventCode 3
 
 ## References
 
-- OSSEM Detection Model: https://ossemproject.com/dm/mitre_attack/attack_techniques_to_events.html
-- OSSEM CDM DNS Entity: https://ossemproject.com/cdm/entities/dns.html
-- OSSEM EventCode 22: https://github.com/OTRF/OSSEM-DD/blob/main/windows/sysmon/events/event-22.yml
-- MITRE ATT&CK T1566.001: https://attack.mitre.org/techniques/T1566/001/
-- MITRE ATT&CK T1071.004: https://attack.mitre.org/techniques/T1071/004/
-- VirusTotal API: https://developers.virustotal.com/reference/overview
-- URLhaus API: https://urlhaus-api.abuse.ch/
-- python-whois: https://pypi.org/project/python-whois/
+- **Sysmon EventCode 22 (DNS Query)** : https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventid=90022
+- **PySpark SQL Documentation** : https://spark.apache.org/docs/latest/sql-getting-started.html#running-sql-queries-programmatically
+- **PySpark SHA2 Function** : https://dlcdn.apache.org/spark/docs/3.4.3/api/python/reference/pyspark.sql/api/pyspark.sql.functions.sha2.html
+- **OSSEM EventCode 22 Data Dictionary** : https://github.com/OTRF/OSSEM-DD/blob/afd9b27897346dfa3b3f43d2d403c3f5c5f86214/windows/sysmon/events/event-22.yml
+- **MITRE ATT&CK T1566.001**: https://attack.mitre.org/techniques/T1566/001/
+- **MITRE ATT&CK T1071.004**: https://attack.mitre.org/techniques/T1071/004/
+- **OSSEM CDM DNS Entity** : https://ossemproject.com/cdm/entities/dns.html
+- **Elastic ECS DNS Schema** : https://www.elastic.co/docs/reference/ecs/ecs-dns
+- **python-whois Library** : https://pypi.org/project/python-whois/
+- **URLhaus API Documentation** : https://urlhaus-api.abuse.ch/
+- **VirusTotal Domain Info API** : https://docs.virustotal.com/reference/domain-info
+- **AsyncRAT Malware Explained** : https://www.checkpoint.com/cyber-hub/threat-prevention/what-is-malware/asyncrat-malware-explained/
 
 ---
 
