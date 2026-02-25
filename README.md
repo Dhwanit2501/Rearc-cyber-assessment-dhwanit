@@ -39,7 +39,7 @@ Went beyond the detection to investigate the full attack chain using EventCode 3
 ## Key Design Decisions
 
 - **get_json_object over from_json** - handles mixed event types without requiring a fixed schema across all event codes
-- **OSSEM over ECS** - purpose built for Windows Sysmon, aligns with the Ultimate Windows Security Encyclopedia referenced in the assessment
+- **OSSEM over ECS** - the data is Windows Sysmon logs, OSSEM maps security events to MITRE ATT&CK techniques, focusing heavily on Windows processes, network connections, and registry modifications
 - **SHA256 alert IDs** - deterministic hashing ensures idempotency across repeated detection runs, prevents duplicate alerts
 - **Three enrichment sources** - chosen to cover domain registration, malware hosting history, and vendor reputation without overwhelming the analyst
 - **API keys in .env** - excluded from version control via .gitignore for security
